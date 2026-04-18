@@ -10,10 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, Check, Info, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Bell, Check, Info, AlertTriangle, ShieldAlert, Lock } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
+  const { isDemo } = useAuth();
   const { data, isLoading } = useListNotifications({ limit: 50 });
   const markRead = useMarkNotificationRead();
 
@@ -101,7 +103,7 @@ export default function NotificationsPage() {
                   )}
                 </div>
 
-                {!notification.isRead && (
+                {!notification.isRead && !isDemo && (
                   <div className="flex-shrink-0 mt-4 sm:mt-0 self-start sm:self-center">
                     <Button 
                       variant="ghost" 

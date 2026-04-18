@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Activity,
   AlertCircle,
@@ -19,6 +20,8 @@ import {
   HeartHandshake,
   Sparkles,
   X,
+  KeyRound,
+  Loader2,
 } from "lucide-react";
 
 const DEMO_ACCOUNTS = [
@@ -30,6 +33,7 @@ const DEMO_ACCOUNTS = [
     color: "bg-emerald-500",
     hoverColor: "hover:bg-emerald-600",
     ring: "ring-emerald-300",
+    code: "nursedemo123",
   },
   {
     label: "Admin",
@@ -39,6 +43,7 @@ const DEMO_ACCOUNTS = [
     color: "bg-blue-500",
     hoverColor: "hover:bg-blue-600",
     ring: "ring-blue-300",
+    code: "admindemo123",
   },
   {
     label: "Parent",
@@ -48,6 +53,7 @@ const DEMO_ACCOUNTS = [
     color: "bg-purple-500",
     hoverColor: "hover:bg-purple-600",
     ring: "ring-purple-300",
+    code: null,
   },
 ];
 
@@ -64,12 +70,20 @@ const FEATURES = [
   { icon: Users, text: "Multi-role access for nurses & staff" },
 ];
 
+type DemoAccount = typeof DEMO_ACCOUNTS[number];
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
-  const [demoHint, setDemoHint] = useState<string | null>(null);
+
+  // Demo code gate state
+  const [pendingDemo, setPendingDemo] = useState<DemoAccount | null>(null);
+  const [demoCode, setDemoCode] = useState("");
+  const [showDemoCode, setShowDemoCode] = useState(false);
+  const [demoCodeError, setDemoCodeError] = useState("");
+
   const { setAuth } = useAuth();
   const [, setLocation] = useLocation();
   const login = useLogin();
@@ -92,14 +106,9 @@ export default function LoginPage() {
     );
   };
 
-  const handleDemoLogin = (demoEmail: string, roleLabel: string) => {
-    setDemoOpen(false);
-    setDemoHint(roleLabel);
-    setEmail(demoEmail);
-    setPassword("password123");
-
+  const proceedDemoLogin = (account: DemoAccount) => {
     login.mutate(
-      { data: { email: demoEmail, password: "password123" } },
+      { data: { email: account.email, password: "password123" } },
       {
         onSuccess: (data) => {
           setAuth(data.token, data.user.role as UserRole, data.user.name, data.user.email);
@@ -110,6 +119,31 @@ export default function LoginPage() {
         },
       }
     );
+  };
+
+  const handleDemoClick = (account: DemoAccount) => {
+    setDemoOpen(false);
+    if (account.code) {
+      // Requires code — open dialog
+      setPendingDemo(account);
+      setDemoCode("");
+      setDemoCodeError("");
+      setShowDemoCode(false);
+    } else {
+      // No code needed — log in directly
+      proceedDemoLogin(account);
+    }
+  };
+
+  const handleDemoCodeSubmit = () => {
+    if (!pendingDemo) return;
+    if (demoCode !== pendingDemo.code) {
+      setDemoCodeError("Incorrect demo code. Please try again.");
+      return;
+    }
+    setDemoCodeError("");
+    proceedDemoLogin(pendingDemo);
+    setPendingDemo(null);
   };
 
   return (
@@ -190,7 +224,7 @@ export default function LoginPage() {
                 type="email"
                 placeholder="you@yourschool.edu"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setDemoHint(null); }}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="h-11"
                 autoComplete="email"
@@ -218,11 +252,6 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {demoHint && (
-                <p className="text-xs text-emerald-600 font-medium">
-                  Signing in as {demoHint}…
-                </p>
-              )}
             </div>
 
             {login.isError && (
@@ -257,31 +286,37 @@ export default function LoginPage() {
 
         {/* Floating bubble demo menu */}
         <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-50">
-          {/* Demo account bubbles — slide up when open */}
           <div
             className={`flex flex-col items-end gap-3 transition-all duration-300 ${
               demoOpen ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
             }`}
           >
-            {DEMO_ACCOUNTS.map(({ label, email: demoEmail, role, icon: Icon, color, hoverColor, ring }) => (
-              <button
-                key={demoEmail}
-                type="button"
-                onClick={() => handleDemoLogin(demoEmail, role)}
-                className={`flex items-center gap-3 ${color} ${hoverColor} text-white rounded-full pl-4 pr-5 py-2.5 shadow-lg ring-2 ${ring} ring-offset-2 transition-all duration-200 hover:scale-105 active:scale-95`}
-              >
-                <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <div className="text-left">
-                  <div className="text-sm font-semibold leading-tight">{label}</div>
-                  <div className="text-xs opacity-75 leading-tight">{demoEmail}</div>
-                </div>
-              </button>
-            ))}
+            {DEMO_ACCOUNTS.map((account) => {
+              const { label, email: demoEmail, role, icon: Icon, color, hoverColor, ring } = account;
+              return (
+                <button
+                  key={demoEmail}
+                  type="button"
+                  onClick={() => handleDemoClick(account)}
+                  disabled={login.isPending}
+                  className={`flex items-center gap-3 ${color} ${hoverColor} text-white rounded-full pl-4 pr-5 py-2.5 shadow-lg ring-2 ${ring} ring-offset-2 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-60`}
+                >
+                  <div className="h-7 w-7 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-semibold leading-tight">{label}</div>
+                    <div className="text-xs opacity-75 leading-tight">{role}</div>
+                  </div>
+                  {account.code && (
+                    <KeyRound className="h-3.5 w-3.5 opacity-70 ml-1 flex-shrink-0" />
+                  )}
+                </button>
+              );
+            })}
 
             <p className="text-xs text-muted-foreground text-right pr-1">
-              All use password: <code className="font-mono bg-muted px-1 py-0.5 rounded">password123</code>
+              Staff demos require an access code
             </p>
           </div>
 
@@ -308,6 +343,68 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+
+      {/* Demo code gate dialog */}
+      <Dialog open={!!pendingDemo} onOpenChange={(open) => { if (!open) setPendingDemo(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {pendingDemo && <pendingDemo.icon className="h-5 w-5" />}
+              {pendingDemo?.label} Demo Access
+            </DialogTitle>
+            <DialogDescription>
+              Enter the demo access code to preview the {pendingDemo?.role} experience. This is a read-only demo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="demoCode" className="flex items-center gap-1.5">
+                <KeyRound className="h-3.5 w-3.5" /> Demo Code
+              </Label>
+              <div className="relative">
+                <Input
+                  id="demoCode"
+                  type={showDemoCode ? "text" : "password"}
+                  placeholder="Enter the demo access code"
+                  value={demoCode}
+                  onChange={(e) => { setDemoCode(e.target.value); setDemoCodeError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleDemoCodeSubmit(); }}
+                  className="pr-10"
+                  autoComplete="off"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDemoCode(!showDemoCode)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showDemoCode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {demoCodeError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {demoCodeError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-3">
+              <ShieldCheck className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-primary" />
+              <span>This demo is view-only. No data can be created or modified.</span>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDemo(null)}>Cancel</Button>
+            <Button onClick={handleDemoCodeSubmit} disabled={!demoCode || login.isPending}>
+              {login.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Enter Demo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

@@ -6,6 +6,7 @@ interface AuthContextType {
   userRole: UserRole | null;
   userName: string | null;
   userEmail: string | null;
+  isDemo: boolean;
   setAuth: (token: string, role: UserRole, name?: string, email?: string) => void;
   logout: () => void;
 }
@@ -23,6 +24,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userEmail, setUserEmail] = useState<string | null>(
     localStorage.getItem("user_email") || null
   );
+
+  const isDemo = (userEmail ?? "").endsWith("@demo.school");
 
   const setAuth = (newToken: string, role: UserRole, name?: string, email?: string) => {
     localStorage.setItem("auth_token", newToken);
@@ -47,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ token, userRole, userName, userEmail, setAuth, logout }}>
+    <AuthContext.Provider value={{ token, userRole, userName, userEmail, isDemo, setAuth, logout }}>
       {children}
     </AuthContext.Provider>
   );
