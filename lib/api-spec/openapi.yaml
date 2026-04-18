@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SchoolHealth AI API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: visits
+    description: Nurse visit log operations
+  - name: alerts
+    description: Health alert operations
+  - name: students
+    description: Student operations
+  - name: dashboard
+    description: Dashboard summary operations
+  - name: notifications
+    description: Notification operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,391 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user info
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /visits:
+    get:
+      operationId: listVisits
+      tags: [visits]
+      summary: List nurse visits with optional filters
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+        - name: grade
+          in: query
+          schema:
+            type: string
+        - name: classroom
+          in: query
+          schema:
+            type: string
+        - name: symptom
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of visits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VisitListResponse"
+    post:
+      operationId: createVisit
+      tags: [visits]
+      summary: Log a new nurse visit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVisitBody"
+      responses:
+        "201":
+          description: Visit created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visit"
+
+  /visits/{id}:
+    get:
+      operationId: getVisit
+      tags: [visits]
+      summary: Get a single visit by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Visit details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Visit"
+
+  /students:
+    get:
+      operationId: listStudents
+      tags: [students]
+      summary: List students
+      parameters:
+        - name: grade
+          in: query
+          schema:
+            type: string
+        - name: classroom
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of students
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentListResponse"
+    post:
+      operationId: createStudent
+      tags: [students]
+      summary: Create a new student record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStudentBody"
+      responses:
+        "201":
+          description: Student created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+
+  /students/{id}:
+    get:
+      operationId: getStudent
+      tags: [students]
+      summary: Get a student with their health history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Student details with visit history
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDetail"
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List health alerts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, resolved, all]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertListResponse"
+
+  /alerts/{id}:
+    get:
+      operationId: getAlert
+      tags: [alerts]
+      summary: Get alert details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Alert details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+  /alerts/{id}/resolve:
+    post:
+      operationId: resolveAlert
+      tags: [alerts]
+      summary: Resolve an active alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResolveAlertBody"
+      responses:
+        "200":
+          description: Alert resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/symptom-trends:
+    get:
+      operationId: getSymptomTrends
+      tags: [dashboard]
+      summary: Get symptom trend data over time
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 14
+      responses:
+        "200":
+          description: Symptom trend data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SymptomTrendsResponse"
+
+  /dashboard/classroom-heatmap:
+    get:
+      operationId: getClassroomHeatmap
+      tags: [dashboard]
+      summary: Get classroom-level visit heatmap data
+      parameters:
+        - name: days
+          in: query
+          schema:
+            type: integer
+            default: 7
+      responses:
+        "200":
+          description: Classroom heatmap data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClassroomHeatmapResponse"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent visit activity feed
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecentActivityResponse"
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +430,536 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+      required:
+        - user
+        - token
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [nurse, admin, parent]
+        schoolId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - role
+        - schoolId
+        - createdAt
+
+    Visit:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentId:
+          type: integer
+        studentName:
+          type: string
+        grade:
+          type: string
+        classroom:
+          type: string
+        symptoms:
+          type: array
+          items:
+            type: string
+        temperature:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        actionTaken:
+          type: string
+          enum: [sent_home, returned_to_class, called_parent, referred_to_doctor, monitored]
+        visitDate:
+          type: string
+          format: date-time
+        loggedBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - studentId
+        - studentName
+        - grade
+        - classroom
+        - symptoms
+        - actionTaken
+        - visitDate
+        - loggedBy
+        - createdAt
+
+    VisitListResponse:
+      type: object
+      properties:
+        visits:
+          type: array
+          items:
+            $ref: "#/components/schemas/Visit"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - visits
+        - total
+        - limit
+        - offset
+
+    CreateVisitBody:
+      type: object
+      properties:
+        studentId:
+          type: integer
+          nullable: true
+        anonymousId:
+          type: string
+          nullable: true
+        grade:
+          type: string
+        classroom:
+          type: string
+        symptoms:
+          type: array
+          items:
+            type: string
+          minItems: 1
+        temperature:
+          type: number
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        actionTaken:
+          type: string
+          enum: [sent_home, returned_to_class, called_parent, referred_to_doctor, monitored]
+      required:
+        - grade
+        - classroom
+        - symptoms
+        - actionTaken
+
+    Student:
+      type: object
+      properties:
+        id:
+          type: integer
+        studentCode:
+          type: string
+        name:
+          type: string
+        grade:
+          type: string
+        classroom:
+          type: string
+        dateOfBirth:
+          type: string
+          nullable: true
+        parentEmail:
+          type: string
+          nullable: true
+        parentPhone:
+          type: string
+          nullable: true
+        chronicConditions:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: array
+          items:
+            type: string
+        visitCount:
+          type: integer
+        lastVisitDate:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - studentCode
+        - name
+        - grade
+        - classroom
+        - chronicConditions
+        - allergies
+        - visitCount
+        - createdAt
+
+    StudentListResponse:
+      type: object
+      properties:
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/Student"
+        total:
+          type: integer
+      required:
+        - students
+        - total
+
+    CreateStudentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        grade:
+          type: string
+        classroom:
+          type: string
+        dateOfBirth:
+          type: string
+          nullable: true
+        parentEmail:
+          type: string
+          nullable: true
+        parentPhone:
+          type: string
+          nullable: true
+        chronicConditions:
+          type: array
+          items:
+            type: string
+        allergies:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+        - grade
+        - classroom
+
+    StudentDetail:
+      type: object
+      properties:
+        student:
+          $ref: "#/components/schemas/Student"
+        recentVisits:
+          type: array
+          items:
+            $ref: "#/components/schemas/Visit"
+        riskScore:
+          type: number
+          description: Predicted risk score 0-100
+      required:
+        - student
+        - recentVisits
+        - riskScore
+
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [cluster_detected, possible_outbreak, chronic_absenteeism_risk, elevated_symptoms]
+        severity:
+          type: string
+          enum: [low, medium, high]
+        status:
+          type: string
+          enum: [active, resolved]
+        title:
+          type: string
+        description:
+          type: string
+        affectedClassroom:
+          type: string
+          nullable: true
+        affectedGrade:
+          type: string
+          nullable: true
+        affectedCount:
+          type: integer
+        symptoms:
+          type: array
+          items:
+            type: string
+        resolvedAt:
+          type: string
+          format: date-time
+          nullable: true
+        resolvedBy:
+          type: string
+          nullable: true
+        resolutionNote:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - severity
+        - status
+        - title
+        - description
+        - affectedCount
+        - symptoms
+        - createdAt
+
+    AlertListResponse:
+      type: object
+      properties:
+        alerts:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alert"
+        total:
+          type: integer
+        activeCount:
+          type: integer
+      required:
+        - alerts
+        - total
+        - activeCount
+
+    ResolveAlertBody:
+      type: object
+      properties:
+        note:
+          type: string
+      required:
+        - note
+
+    DashboardSummary:
+      type: object
+      properties:
+        todayVisits:
+          type: integer
+        weekVisits:
+          type: integer
+        activeAlerts:
+          type: integer
+        highSeverityAlerts:
+          type: integer
+        studentsMonitored:
+          type: integer
+        topSymptoms:
+          type: array
+          items:
+            type: object
+            properties:
+              symptom:
+                type: string
+              count:
+                type: integer
+            required:
+              - symptom
+              - count
+        alertTrend:
+          type: string
+          enum: [up, down, stable]
+        visitTrend:
+          type: string
+          enum: [up, down, stable]
+      required:
+        - todayVisits
+        - weekVisits
+        - activeAlerts
+        - highSeverityAlerts
+        - studentsMonitored
+        - topSymptoms
+        - alertTrend
+        - visitTrend
+
+    SymptomTrendsResponse:
+      type: object
+      properties:
+        days:
+          type: integer
+        series:
+          type: array
+          items:
+            type: object
+            properties:
+              symptom:
+                type: string
+              data:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    date:
+                      type: string
+                    count:
+                      type: integer
+                  required:
+                    - date
+                    - count
+            required:
+              - symptom
+              - data
+      required:
+        - days
+        - series
+
+    ClassroomHeatmapResponse:
+      type: object
+      properties:
+        days:
+          type: integer
+        classrooms:
+          type: array
+          items:
+            type: object
+            properties:
+              classroom:
+                type: string
+              grade:
+                type: string
+              visitCount:
+                type: integer
+              riskLevel:
+                type: string
+                enum: [low, medium, high]
+              topSymptom:
+                type: string
+                nullable: true
+            required:
+              - classroom
+              - grade
+              - visitCount
+              - riskLevel
+      required:
+        - days
+        - classrooms
+
+    RecentActivityResponse:
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              type:
+                type: string
+                enum: [visit, alert, resolved]
+              title:
+                type: string
+              description:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+              severity:
+                type: string
+                enum: [low, medium, high]
+                nullable: true
+            required:
+              - id
+              - type
+              - title
+              - description
+              - timestamp
+      required:
+        - activities
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+          enum: [exposure_alert, cluster_warning, outbreak_notice, general]
+        isRead:
+          type: boolean
+        alertId:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - userId
+        - title
+        - message
+        - type
+        - isRead
+        - createdAt
+
+    NotificationListResponse:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        unreadCount:
+          type: integer
+      required:
+        - notifications
+        - unreadCount

@@ -1,0 +1,148 @@
+Build a production-ready, secure, and scalable web + mobile-friendly SaaS application called “SchoolHealth AI” that detects and prevents illness outbreaks in schools using real-time nurse visit data.
+
+🧠 Problem Statement
+
+Schools currently log nurse visits on paper, making health trends invisible. When multiple students report symptoms (e.g., stomach aches), outbreaks (like food poisoning or flu) go undetected until it’s too late.
+
+Example:
+
+Monday: 3 students report stomach aches
+Tuesday: 5 more
+Wednesday: 7 more from same class
+→ No system connects the pattern → outbreak spreads
+🎯 Goal
+
+Create an AI-powered school health monitoring platform that:
+
+Logs student nurse visits quickly
+Detects symptom patterns automatically
+Alerts staff in real time
+Notifies parents when needed
+Provides actionable health insights
+🏗️ Core Features
+1. ⚡ Fast Nurse Input Interface
+Form takes <30 seconds
+Fields:
+Student ID (or anonymous ID)
+Grade/Class
+Symptoms (multi-select + free text)
+Temperature (optional)
+Notes
+Action taken (sent home, returned to class, etc.)
+Mobile-first design (tablet-friendly)
+2. 🤖 AI Pattern Detection Engine
+Detect clusters based on:
+Symptoms
+Time window
+Location (class, grade, cafeteria exposure)
+
+Example detection:
+
+“8 students from Class 5B reported nausea this week — 6 ate cafeteria lunch”
+
+Use:
+Basic anomaly detection (start simple: rules + thresholds)
+Expandable to ML later
+3. 🚨 Smart Alert System
+Real-time alerts:
+Admin dashboard warnings
+Email + push notifications
+Alert types:
+Cluster detected
+Possible outbreak
+Chronic absenteeism risk
+Severity levels (low / medium / high)
+4. 👨‍👩‍👧 Parent Notification System
+Notify only affected parents
+Channels:
+Push notification (app)
+Email
+
+Message example:
+
+“Your child may have been exposed to a stomach illness at school this week.”
+
+5. 📊 Admin Dashboard
+Visual analytics:
+Symptom trends over time
+Heatmaps (by class/grade)
+Absentee correlation
+Filters:
+Date range
+Symptom type
+Class
+Export reports (PDF/CSV)
+6. 🧾 Longitudinal Student Health Records
+Secure records that persist year-to-year
+Track:
+Chronic conditions (asthma, allergies)
+Visit frequency
+Role-based access
+🔐 Security & Compliance (CRITICAL)
+
+Make this investor-grade secure:
+
+Authentication:
+JWT-based auth
+Role-based access (Nurse, Admin, Parent)
+Data protection:
+Encrypt sensitive data at rest (AES-256)
+HTTPS everywhere
+Privacy:
+FERPA/HIPAA-aware design principles
+Minimize personally identifiable info
+Database:
+Use PostgreSQL
+Input validation + sanitization
+Rate limiting + basic protection against abuse
+🧩 Tech Stack
+
+Use modern, scalable tools:
+
+Frontend: React (Next.js preferred), Tailwind CSS
+Backend: Node.js (Express or Next API routes)
+Database: PostgreSQL (via Prisma ORM)
+Auth: JWT or Clerk/Auth0 (if easier)
+Real-time: WebSockets or Firebase
+Deployment-ready
+✨ UX / Product Quality (MAKE IT INVESTABLE)
+Clean, modern UI (think Stripe / Notion quality)
+Extremely simple nurse workflow
+Fast performance
+Mobile responsive
+Onboarding flow for schools
+Demo data mode for investors
+💡 Bonus Features (for differentiation)
+Predictive risk scoring (which class might outbreak next)
+Cafeteria correlation tracking
+Anonymous reporting mode
+Multi-school district dashboard
+API for integration with school systems
+📦 Deliverables
+Full working app (frontend + backend)
+Seed database with demo data
+Clear folder structure
+README with setup instructions
+Example user accounts:
+Nurse
+Admin
+Parent
+🧪 Example Scenario to Support
+
+Simulate:
+
+15 students report stomach aches over 3 days
+System detects cluster
+Admin gets alert
+Parents of affected students get notified
+⚠️ Important
+Prioritize clarity, usability, and real-world practicality
+Avoid overengineering — but structure for scaling
+Code should be clean, modular, and maintainable
+🎯 End Goal
+
+A polished MVP that:
+
+Could realistically be pitched to investors
+Solves a real problem clearly
+Demonstrates strong product thinking, not just code
