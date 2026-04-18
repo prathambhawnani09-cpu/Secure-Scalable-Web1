@@ -35,7 +35,7 @@ export default function AlertsPage() {
   const [resolveAuthError, setResolveAuthError] = useState("");
   const [verifying, setVerifying] = useState(false);
 
-  const { userEmail } = useAuth();
+  const { userEmail, isDemo } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -226,9 +226,14 @@ export default function AlertsPage() {
               </CardContent>
               {alert.status === 'active' && (
                 <CardFooter className="bg-muted/20 border-t pt-4 flex items-center gap-3">
-                  <Button onClick={() => handleResolveClick(alert.id)}>
+                  <Button onClick={() => handleResolveClick(alert.id)} disabled={isDemo}>
                     Mark as Resolved
                   </Button>
+                  {isDemo && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Lock className="h-3 w-3" /> View only in demo
+                    </span>
+                  )}
                 </CardFooter>
               )}
             </Card>
