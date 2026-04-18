@@ -482,18 +482,18 @@ async function seed() {
     await db.insert(notificationsTable).values([
       {
         userId: parent.id,
-        title: "Health Alert: Your child's class",
+        title: "Possible Outbreak: Class 5B",
         message:
-          "A possible flu outbreak has been detected in Class 5B where your child is enrolled. 5 students have reported fever and respiratory symptoms. Please monitor your child for symptoms and keep them home if unwell.",
+          "A possible flu outbreak has been detected in Class 5B. 5 students have reported fever and respiratory symptoms. Please monitor all contacts for symptoms and take appropriate precautions.",
         type: "outbreak_notice",
         isRead: false,
         alertId: alert1.id,
       },
       {
         userId: parent.id,
-        title: "Exposure Notice",
+        title: "Exposure Notice: Gastrointestinal Illness",
         message:
-          "Your child may have been exposed to students with gastrointestinal illness in their classroom. Watch for symptoms like stomach pain, nausea, or vomiting over the next 48 hours.",
+          "Students in Class 3A may have been exposed to a gastrointestinal illness. Watch for symptoms like stomach pain, nausea, or vomiting over the next 48 hours. Contact the school nurse if symptoms develop.",
         type: "exposure_alert",
         isRead: false,
         alertId: alert2.id,
