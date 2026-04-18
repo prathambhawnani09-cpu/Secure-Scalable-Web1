@@ -31,26 +31,6 @@ const API_BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 type Step = "info" | "password";
 type Role = "nurse" | "admin" | "parent" | "student";
 
-interface PasswordStrength {
-  score: number;
-  label: string;
-  color: string;
-}
-
-function getPasswordStrength(password: string): PasswordStrength {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-
-  if (score <= 1) return { score, label: "Very weak", color: "bg-red-500" };
-  if (score === 2) return { score, label: "Weak", color: "bg-orange-500" };
-  if (score === 3) return { score, label: "Fair", color: "bg-yellow-500" };
-  if (score === 4) return { score, label: "Strong", color: "bg-blue-500" };
-  return { score, label: "Very strong", color: "bg-green-500" };
-}
 
 export default function SignupPage() {
   const [step, setStep] = useState<Step>("info");
@@ -77,15 +57,7 @@ export default function SignupPage() {
   const [, setLocation] = useLocation();
   const { setAuth } = useAuth();
 
-  const strength = getPasswordStrength(password);
   const passwordsMatch = confirmPassword.length > 0 && password === confirmPassword;
-
-  const passwordChecks = [
-    { label: "At least 8 characters", pass: password.length >= 8 },
-    { label: "One uppercase letter", pass: /[A-Z]/.test(password) },
-    { label: "One number", pass: /[0-9]/.test(password) },
-    { label: "One special character", pass: /[^A-Za-z0-9]/.test(password) },
-  ];
 
   const handleInfoNext = (e: React.FormEvent) => {
     e.preventDefault();
@@ -334,31 +306,6 @@ export default function SignupPage() {
                     </button>
                   </div>
 
-                  {password.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div
-                            key={i}
-                            className={`h-1.5 flex-1 rounded-full transition-colors ${
-                              i <= strength.score ? strength.color : "bg-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Strength: <span className="font-medium">{strength.label}</span>
-                      </p>
-                      <ul className="space-y-1">
-                        {passwordChecks.map((check) => (
-                          <li key={check.label} className={`text-xs flex items-center gap-1.5 ${check.pass ? "text-green-600" : "text-muted-foreground"}`}>
-                            <CheckCircle2 className={`h-3 w-3 ${check.pass ? "opacity-100" : "opacity-30"}`} />
-                            {check.label}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
 
                 <div className="space-y-2">
