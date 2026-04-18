@@ -206,4 +206,31 @@ router.get("/recent-activity", async (req, res) => {
   res.json({ activities: activities.slice(0, limit) });
 });
 
+router.get("/daily-visits", async (req, res) => {
+  const days = Number(req.query.days ?? 14);
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const visits = await db.select({
+    date: sql<string>`to_char(visit_date, 'YYYY-MM-DD')`,
+    count: sql<number>`count(*)`,
+  })
+    .from(visitsTable)
+    .where(gte(visitsTable.visitDate, startDate))
+    .groupBy(sql`to_char(visit_date, 'YYYY-MM-DD')`)
+    .orderBy(sql`to_char(visit_date, 'YYYY-MM-DD')`);
+
+  const dateMap = new Map(visits.map(v => [v.date, Number(v.count)]));
+
+  const result = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    result.push({ date: key, visits: dateMap.get(key) ?? 0 });
+  }
+
+  res.json({ days, data: result });
+});
+
 export { router as dashboardRouter };

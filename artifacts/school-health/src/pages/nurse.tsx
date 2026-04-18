@@ -23,7 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Check, ChevronsUpDown, Stethoscope, Clock, User as UserIcon } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown, Stethoscope, Clock, User as UserIcon, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const COMMON_SYMPTOMS = [
@@ -38,6 +38,7 @@ const formSchema = z.object({
   symptoms: z.array(z.string()).min(1, "Select at least one symptom"),
   temperature: z.coerce.number().optional().nullable(),
   notes: z.string().optional().nullable(),
+  parentMessage: z.string().optional().nullable(),
   actionTaken: z.enum([
     "sent_home", "returned_to_class", "called_parent", "referred_to_doctor", "monitored"
   ], { required_error: "Action taken is required" })
@@ -61,24 +62,35 @@ export default function NursePage() {
       symptoms: [],
       temperature: null,
       notes: "",
+      parentMessage: "",
     }
   });
 
+  const watchedAction = form.watch("actionTaken");
+
   const onSubmit = (data: FormValues) => {
+    let finalNotes = data.notes || "";
+    if (data.actionTaken === "called_parent" && data.parentMessage?.trim()) {
+      const parentNote = `[Parent Notification]\n${data.parentMessage.trim()}`;
+      finalNotes = finalNotes ? `${parentNote}\n\n${finalNotes}` : parentNote;
+    }
+
     createVisit.mutate(
-      { data: data as any },
+      { data: { ...data, notes: finalNotes } as any },
       {
         onSuccess: () => {
           toast({
             title: "Visit Logged",
-            description: "The student visit has been successfully recorded.",
+            description: data.actionTaken === "called_parent" && data.parentMessage?.trim()
+              ? "Visit recorded and parent notification saved to patient record."
+              : "The student visit has been successfully recorded.",
           });
           form.reset({
             symptoms: [],
             temperature: null,
             notes: "",
+            parentMessage: "",
           });
-          // Invalidate recent visits to refresh sidebar
           queryClient.invalidateQueries({ queryKey: getListVisitsQueryKey() });
         },
         onError: () => {
@@ -363,6 +375,33 @@ export default function NursePage() {
                     </FormItem>
                   )}
                 />
+
+                {watchedAction === "called_parent" && (
+                  <FormField
+                    control={form.control}
+                    name="parentMessage"
+                    render={({ field }) => (
+                      <FormItem className="border border-primary/20 bg-primary/5 rounded-lg p-4">
+                        <FormLabel className="flex items-center gap-2 text-primary font-semibold">
+                          <Bell className="h-4 w-4" />
+                          Parent Notification Message
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Write the message/script sent to the parent (e.g. 'Hello, I'm calling from the school nurse office. Your child reported feeling unwell today with a fever of 101°F. I recommend picking them up early...')"
+                            className="resize-none h-32"
+                            {...field}
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          This message will be saved to the patient's record for reference.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <div className="flex justify-end pt-4 border-t">
                   <Button type="submit" size="lg" disabled={createVisit.isPending} className="w-full sm:w-auto">

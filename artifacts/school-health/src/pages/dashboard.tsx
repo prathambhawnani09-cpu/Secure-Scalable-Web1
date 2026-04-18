@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
+import { useQuery } from "@tanstack/react-query";
 import { 
   useGetDashboardSummary, 
   useGetSymptomTrends, 
   useGetClassroomHeatmap, 
   useGetRecentActivity 
 } from "@workspace/api-client-react";
+import { useAuth } from "@/lib/auth";
 import { 
   Activity, 
   AlertTriangle, 
@@ -24,6 +26,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { 
   LineChart, 
   Line, 
+  BarChart,
+  Bar,
   XAxis, 
   YAxis, 
   CartesianGrid, 
@@ -34,11 +38,22 @@ import {
 
 export default function DashboardPage() {
   const [days] = useState(7);
+  const { token } = useAuth();
   
   const { data: summary, isLoading: isLoadingSummary, isError: isErrorSummary } = useGetDashboardSummary();
   const { data: trends, isLoading: isLoadingTrends } = useGetSymptomTrends({ days });
   const { data: heatmap, isLoading: isLoadingHeatmap } = useGetClassroomHeatmap({ days });
   const { data: activity, isLoading: isLoadingActivity } = useGetRecentActivity({ limit: 5 });
+
+  const { data: dailyVisits, isLoading: isLoadingDailyVisits } = useQuery({
+    queryKey: ["daily-visits", 14],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard/daily-visits?days=14", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      return res.json() as Promise<{ days: number; data: { date: string; visits: number }[] }>;
+    },
+  });
 
   if (isErrorSummary) {
     return (
@@ -148,6 +163,46 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Daily Patient Visits Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            Daily Patient Visits
+          </CardTitle>
+          <CardDescription>Number of patients seen each day over the last 14 days</CardDescription>
+        </CardHeader>
+        <CardContent className="pl-0">
+          {isLoadingDailyVisits ? (
+            <div className="h-[220px] flex items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="h-[220px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={(dailyVisits?.data ?? []).map(d => ({
+                    date: format(new Date(d.date + "T00:00:00"), "MMM dd"),
+                    Patients: d.visits,
+                  }))}
+                  margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <RechartsTooltip
+                    contentStyle={{ backgroundColor: "hsl(var(--popover))", borderColor: "hsl(var(--border))", borderRadius: "8px" }}
+                    itemStyle={{ color: "hsl(var(--foreground))" }}
+                    cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
+                  />
+                  <Bar dataKey="Patients" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-7">
         {/* Symptom Trends Chart */}

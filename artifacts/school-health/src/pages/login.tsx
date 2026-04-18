@@ -34,10 +34,9 @@ export default function LoginPage() {
 
   const demoLogin = (roleEmail: string) => {
     setEmail(roleEmail);
-    setPassword("password123");
-    // We defer the actual login to avoid state staleness, but we can do it directly:
+    setPassword("pb042009");
     login.mutate(
-      { data: { email: roleEmail, password: "password123" } },
+      { data: { email: roleEmail, password: "pb042009" } },
       {
         onSuccess: (data) => {
           setAuth(data.token, data.user.role);
@@ -120,6 +119,9 @@ export default function LoginPage() {
                 </Button>
                 <Button variant="outline" onClick={() => demoLogin("parent@demo.school")}>
                   Parent Demo
+                </Button>
+                <Button variant="outline" onClick={() => demoLogin("teacher@demo.school")}>
+                  Teacher Demo
                 </Button>
               </div>
             </div>
