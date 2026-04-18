@@ -26,7 +26,7 @@ export default function IndexPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="animate-pulse flex flex-col items-center">
         <div className="h-8 w-8 rounded-full bg-primary mb-4"></div>
-        <div className="text-muted-foreground">Loading SchoolHealth AI...</div>
+        <div className="text-muted-foreground">Loading SymptomSense...</div>
       </div>
     </div>
   );

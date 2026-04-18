@@ -58,12 +58,12 @@ async function sendOtpEmail(email: string, otp: string, name: string): Promise<b
     });
 
     await transporter.sendMail({
-      from: `"SchoolHealth AI" <${user}>`,
+      from: `"SymptomSense" <${user}>`,
       to: email,
-      subject: "SchoolHealth AI — Your verification code",
+      subject: "SymptomSense — Your verification code",
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#fff;">
-          <h2 style="color:#1d4ed8;margin-bottom:8px;">SchoolHealth AI</h2>
+          <h2 style="color:#1d4ed8;margin-bottom:8px;">SymptomSense</h2>
           <p style="color:#374151;">Hi ${name},</p>
           <p style="color:#374151;">Your email verification code is:</p>
           <div style="background:#f3f4f6;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">

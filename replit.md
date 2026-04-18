@@ -1,4 +1,4 @@
-# SchoolHealth AI
+# SymptomSense
 
 ## Overview
 

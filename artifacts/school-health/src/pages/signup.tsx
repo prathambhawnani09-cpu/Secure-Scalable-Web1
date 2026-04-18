@@ -151,7 +151,7 @@ export default function SignupPage() {
           <div className="h-12 w-12 bg-primary rounded-xl flex items-center justify-center mb-4">
             <Activity className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">SchoolHealth AI</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">SymptomSense</h1>
           <p className="text-muted-foreground mt-2">Create your account</p>
         </div>
 

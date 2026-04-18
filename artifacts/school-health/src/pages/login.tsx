@@ -166,7 +166,7 @@ export default function LoginPage() {
             <div className="h-10 w-10 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
               <Activity className="h-6 w-6 text-white" />
             </div>
-            <span className="text-white font-bold text-xl">SchoolHealth AI</span>
+            <span className="text-white font-bold text-xl">SymptomSense</span>
           </div>
 
           <h1 className="text-4xl font-extrabold text-white leading-tight mb-4">
@@ -208,7 +208,7 @@ export default function LoginPage() {
             <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
               <Activity className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">SchoolHealth AI</span>
+            <span className="font-bold text-lg">SymptomSense</span>
           </div>
 
           <div className="mb-8">

@@ -17,7 +17,9 @@ import {
   TrendingDown, 
   Minus,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Flame,
+  ThermometerSun
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,64 @@ import {
   ResponsiveContainer,
   Legend
 } from "recharts";
+
+function OutbreakRiskCell({ room }: { room: { classroom: string; visitCount: number; riskLevel: string; topSymptom: string | null } }) {
+  const maxVisits = 12;
+  const pct = Math.min(100, Math.round((room.visitCount / maxVisits) * 100));
+
+  const gradient =
+    room.riskLevel === "high"
+      ? "from-red-500 to-orange-500"
+      : room.riskLevel === "medium"
+      ? "from-orange-400 to-yellow-400"
+      : "from-emerald-400 to-teal-400";
+
+  const textColor =
+    room.riskLevel === "high"
+      ? "text-red-700"
+      : room.riskLevel === "medium"
+      ? "text-orange-700"
+      : "text-emerald-700";
+
+  const bgColor =
+    room.riskLevel === "high"
+      ? "bg-red-50 border-red-200"
+      : room.riskLevel === "medium"
+      ? "bg-orange-50 border-orange-200"
+      : "bg-emerald-50 border-emerald-200";
+
+  const badge =
+    room.riskLevel === "high"
+      ? "bg-red-500 text-white"
+      : room.riskLevel === "medium"
+      ? "bg-orange-400 text-white"
+      : "bg-emerald-500 text-white";
+
+  return (
+    <div className={`rounded-xl border p-4 flex flex-col gap-2 ${bgColor} transition-transform hover:scale-105`}>
+      <div className="flex items-center justify-between">
+        <span className="font-bold text-lg tracking-wide">{room.classroom}</span>
+        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge}`}>
+          {room.riskLevel.toUpperCase()}
+        </span>
+      </div>
+      <div className={`text-3xl font-extrabold ${textColor}`}>{pct}%</div>
+      <div className="text-xs text-muted-foreground font-medium">Outbreak risk</div>
+      <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+        <div
+          className={`h-2 rounded-full bg-gradient-to-r ${gradient}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-xs mt-1">
+        <span className="text-muted-foreground">{room.visitCount} visit{room.visitCount !== 1 ? "s" : ""}</span>
+        <span className="text-muted-foreground truncate max-w-[80px]">
+          {room.topSymptom ? `↑ ${room.topSymptom}` : "No data"}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const [days] = useState(7);
@@ -68,15 +128,13 @@ export default function DashboardPage() {
   }
 
   const renderTrendIcon = (trend: string) => {
-    if (trend === "up") return <TrendingUp className="h-4 w-4 text-destructive" />;
-    if (trend === "down") return <TrendingDown className="h-4 w-4 text-success" />;
+    if (trend === "up") return <TrendingUp className="h-4 w-4 text-red-400" />;
+    if (trend === "down") return <TrendingDown className="h-4 w-4 text-emerald-400" />;
     return <Minus className="h-4 w-4 text-muted-foreground" />;
   };
 
-  // Transform trends data for Recharts
   const chartData: any[] = [];
   if (trends?.series && trends.series.length > 0) {
-    // Assuming all series have same dates
     trends.series[0].data.forEach((d, i) => {
       const dataPoint: any = { date: format(new Date(d.date), "MMM dd") };
       trends.series.forEach(s => {
@@ -86,89 +144,135 @@ export default function DashboardPage() {
     });
   }
 
-  const colors = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+  const colors = ["#6366f1", "#f43f5e", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6"];
+
+  const sortedRooms = [...(heatmap?.classrooms ?? [])].sort((a, b) => {
+    const order = { high: 0, medium: 1, low: 2 };
+    return (order[a.riskLevel as keyof typeof order] ?? 3) - (order[b.riskLevel as keyof typeof order] ?? 3);
+  });
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Overview</h1>
         <p className="text-muted-foreground">Real-time health intelligence for your school.</p>
       </div>
 
-      {/* Top Stats */}
+      {/* Colorful Stat Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Visits Today</CardTitle>
-            <Stethoscope className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingSummary ? <Skeleton className="h-8 w-16" /> : (
-              <>
-                <div className="text-2xl font-bold">{summary?.todayVisits || 0}</div>
-                <div className="flex items-center text-sm mt-1">
-                  {summary && renderTrendIcon(summary.visitTrend)}
-                  <span className="text-muted-foreground ml-2">vs yesterday</span>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingSummary ? <Skeleton className="h-8 w-16" /> : (
-              <>
-                <div className="text-2xl font-bold">{summary?.activeAlerts || 0}</div>
-                <div className="flex items-center text-sm mt-1">
-                  {summary && renderTrendIcon(summary.alertTrend)}
-                  <span className="text-muted-foreground ml-2">vs last week</span>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">High Severity</CardTitle>
-            <AlertCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingSummary ? <Skeleton className="h-8 w-16" /> : (
-              <>
-                <div className="text-2xl font-bold">{summary?.highSeverityAlerts || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">Require immediate attention</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Students Monitored</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoadingSummary ? <Skeleton className="h-8 w-16" /> : (
-              <>
-                <div className="text-2xl font-bold">{summary?.studentsMonitored || 0}</div>
-                <p className="text-xs text-muted-foreground mt-1">Active risk profiles</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <div className="rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 p-5 text-white shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium opacity-90">Visits Today</span>
+            <div className="bg-white/20 rounded-lg p-1.5">
+              <Stethoscope className="h-4 w-4" />
+            </div>
+          </div>
+          {isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/30" /> : (
+            <>
+              <div className="text-4xl font-extrabold">{summary?.todayVisits ?? 0}</div>
+              <div className="flex items-center text-xs mt-2 opacity-80 gap-1">
+                {summary && renderTrendIcon(summary.visitTrend)}
+                vs yesterday
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 p-5 text-white shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium opacity-90">Active Alerts</span>
+            <div className="bg-white/20 rounded-lg p-1.5">
+              <AlertTriangle className="h-4 w-4" />
+            </div>
+          </div>
+          {isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/30" /> : (
+            <>
+              <div className="text-4xl font-extrabold">{summary?.activeAlerts ?? 0}</div>
+              <div className="flex items-center text-xs mt-2 opacity-80 gap-1">
+                {summary && renderTrendIcon(summary.alertTrend)}
+                vs last week
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-br from-red-500 to-rose-600 p-5 text-white shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium opacity-90">High Severity</span>
+            <div className="bg-white/20 rounded-lg p-1.5">
+              <Flame className="h-4 w-4" />
+            </div>
+          </div>
+          {isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/30" /> : (
+            <>
+              <div className="text-4xl font-extrabold">{summary?.highSeverityAlerts ?? 0}</div>
+              <div className="text-xs mt-2 opacity-80">Require immediate action</div>
+            </>
+          )}
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 p-5 text-white shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium opacity-90">Students Monitored</span>
+            <div className="bg-white/20 rounded-lg p-1.5">
+              <Users className="h-4 w-4" />
+            </div>
+          </div>
+          {isLoadingSummary ? <Skeleton className="h-9 w-16 bg-white/30" /> : (
+            <>
+              <div className="text-4xl font-extrabold">{summary?.studentsMonitored ?? 0}</div>
+              <div className="text-xs mt-2 opacity-80">Active risk profiles</div>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Daily Patient Visits Chart */}
+      {/* Classroom Outbreak Risk Heatmap */}
+      <Card className="border-2">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <ThermometerSun className="h-5 w-5 text-orange-500" />
+            Classroom Outbreak Risk Heatmap
+          </CardTitle>
+          <CardDescription>
+            Ranked by outbreak probability — last {days} days. Red = highest risk of spreading.
+          </CardDescription>
+          <div className="flex items-center gap-3 pt-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" /> Low risk
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="w-3 h-3 rounded-full bg-orange-400" /> Medium risk
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div className="w-3 h-3 rounded-full bg-red-500" /> High risk
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoadingHeatmap ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-xl" />
+              ))}
+            </div>
+          ) : sortedRooms.length === 0 ? (
+            <div className="text-center text-muted-foreground py-12">No classroom data available</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {sortedRooms.map((room) => (
+                <OutbreakRiskCell key={room.classroom} room={room} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Daily Visits Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5 text-primary" />
+            <Activity className="h-5 w-5 text-blue-500" />
             Daily Patient Visits
           </CardTitle>
           <CardDescription>Number of patients seen each day over the last 14 days</CardDescription>
@@ -196,7 +300,7 @@ export default function DashboardPage() {
                     itemStyle={{ color: "hsl(var(--foreground))" }}
                     cursor={{ fill: "hsl(var(--muted))", opacity: 0.4 }}
                   />
-                  <Bar dataKey="Patients" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Patients" fill="#6366f1" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -205,7 +309,7 @@ export default function DashboardPage() {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-7">
-        {/* Symptom Trends Chart */}
+        {/* Symptom Trends */}
         <Card className="md:col-span-4">
           <CardHeader>
             <CardTitle>Symptom Trends</CardTitle>
@@ -222,7 +326,7 @@ export default function DashboardPage() {
                   <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
                       itemStyle={{ color: 'hsl(var(--foreground))' }}
@@ -270,15 +374,15 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {activity?.activities.map((item) => (
-                  <div key={item.id} className="flex items-start gap-4">
-                    <div className={`mt-1.5 h-2 w-2 rounded-full ${
-                      item.type === 'alert' && item.severity === 'high' ? 'bg-destructive' :
-                      item.type === 'alert' && item.severity === 'medium' ? 'bg-warning' :
-                      item.type === 'resolved' ? 'bg-success' : 'bg-primary'
+                  <div key={item.id} className="flex items-start gap-3">
+                    <div className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${
+                      item.type === 'alert' && item.severity === 'high' ? 'bg-red-500' :
+                      item.type === 'alert' && item.severity === 'medium' ? 'bg-orange-400' :
+                      item.type === 'resolved' ? 'bg-emerald-500' : 'bg-indigo-400'
                     }`} />
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       <p className="text-sm font-medium leading-none">{item.title}</p>
                       <p className="text-sm text-muted-foreground">{item.description}</p>
                       <p className="text-xs text-muted-foreground">{format(new Date(item.timestamp), "h:mm a")}</p>
@@ -286,59 +390,13 @@ export default function DashboardPage() {
                   </div>
                 ))}
                 {(!activity?.activities || activity.activities.length === 0) && (
-                  <div className="text-center text-muted-foreground py-8">
-                    No recent activity
-                  </div>
+                  <div className="text-center text-muted-foreground py-8">No recent activity</div>
                 )}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* Classroom Heatmap */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Classroom Heatmap</CardTitle>
-          <CardDescription>Visit concentration by classroom over the last {days} days</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingHeatmap ? (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => (
-                <Skeleton key={i} className="h-24 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {heatmap?.classrooms.map((room) => (
-                <div 
-                  key={room.classroom} 
-                  className={`p-4 rounded-lg border ${
-                    room.riskLevel === 'high' ? 'bg-destructive/10 border-destructive/20 text-destructive' :
-                    room.riskLevel === 'medium' ? 'bg-warning/10 border-warning/20 text-warning-foreground' :
-                    'bg-card border-border'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="font-semibold">{room.classroom}</span>
-                    <Badge variant={room.riskLevel === 'high' ? 'destructive' : room.riskLevel === 'medium' ? 'outline' : 'secondary'} className={room.riskLevel === 'medium' ? 'bg-warning text-warning-foreground border-transparent' : ''}>
-                      {room.riskLevel}
-                    </Badge>
-                  </div>
-                  <div className="text-2xl font-bold mb-1">{room.visitCount}</div>
-                  <div className="text-xs opacity-80 truncate">Top: {room.topSymptom || 'None'}</div>
-                </div>
-              ))}
-              {(!heatmap?.classrooms || heatmap.classrooms.length === 0) && (
-                <div className="col-span-full text-center text-muted-foreground py-8">
-                  No classroom data available
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
