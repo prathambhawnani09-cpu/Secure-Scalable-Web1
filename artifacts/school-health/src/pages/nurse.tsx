@@ -23,9 +23,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Check, ChevronsUpDown, Stethoscope, Clock, User as UserIcon, Bell, Lock } from "lucide-react";
+import { Loader2, Check, ChevronsUpDown, Stethoscope, Clock, User as UserIcon, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/lib/auth";
 
 const COMMON_SYMPTOMS = [
   "Fever", "Cough", "Headache", "Sore Throat", "Nausea", "Vomiting", 
@@ -50,7 +49,6 @@ type FormValues = z.infer<typeof formSchema>;
 export default function NursePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isDemo } = useAuth();
   const [openStudentSelect, setOpenStudentSelect] = useState(false);
   const [customSymptom, setCustomSymptom] = useState("");
 
@@ -147,13 +145,6 @@ export default function NursePage() {
           <h1 className="text-3xl font-bold tracking-tight">Fast Visit Log</h1>
           <p className="text-muted-foreground">Record a student visit quickly and accurately.</p>
         </div>
-
-        {isDemo && (
-          <div className="flex items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
-            <Lock className="h-4 w-4 flex-shrink-0" />
-            <span><strong>Demo mode — view only.</strong> Visit logging is disabled in this preview account.</span>
-          </div>
-        )}
 
         <Card>
           <CardHeader>
@@ -413,9 +404,9 @@ export default function NursePage() {
                 )}
 
                 <div className="flex justify-end pt-4 border-t">
-                  <Button type="submit" size="lg" disabled={createVisit.isPending || isDemo} className="w-full sm:w-auto">
+                  <Button type="submit" size="lg" disabled={createVisit.isPending} className="w-full sm:w-auto">
                     {createVisit.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isDemo ? "View Only — Cannot Save" : "Save Visit Record"}
+                    Save Visit Record
                   </Button>
                 </div>
               </form>
